@@ -4,8 +4,9 @@ import PIXI = require('pixi.js');
 const renderer:PIXI.WebGLRenderer = new PIXI.WebGLRenderer(1280, 720);
 document.body.appendChild(renderer.view);
 
-
-// Programming challenge test created by Brian Howell 3/17/2017;
+/*
+ Programming challenge test created by Brian Howell 3/17/2017;
+*/
 
 // You need to create a root container that will hold the scene you want to draw.
 const stage:PIXI.Container = new PIXI.Container();
@@ -30,7 +31,7 @@ var style = new PIXI.TextStyle({
   fontFamily: 'Arial',
   fontSize: 36,
   fontStyle: 'italic',
-  fontWeight: 'bold',
+  //fontWeight: 'bold',
   fill: ['#ffffff', '#00ff99'], // gradient
   stroke: '#4a1850',
   strokeThickness: 5,
@@ -69,7 +70,7 @@ function animate() {
 function startMoving(){
   if(startStop){
     moveChecker(masterArray,checkerStartPos);
-    //renderer.render(stage);
+    // set move rate to half a second;
     setTimeout(startMoving,500);
   }
 }
@@ -86,7 +87,7 @@ function addStartUI(){
   btn.position.y = 10;
   btn.interactive = true;
   btn.buttonMode = true;
-  btn.on('pointerdown', start);
+  btn.on('pointerdown', run);
   stage.addChild(btn);
 }
 
@@ -97,7 +98,7 @@ function addStopUI(){
   btn.position.y = 10;
   btn.interactive = true;
   btn.buttonMode = true;
-  btn.on('pointerdown', endGame);
+  btn.on('pointerdown', pause);
   stage.addChild(btn);
 }
 
@@ -161,8 +162,7 @@ function loadRandomArrow(blockNum){
   // pick the arrow based on the random number;
   var min = 0;
   var max = 3;
-  var rand = Math.random() * (max - min + 1) + min;
-  var ab = Math.floor(rand);
+  var ab = Math.floor(Math.random() * (max - min + 1) + min);
   if(ab==0){
     masterArray[blockNum] = 0;
     return new PIXI.Sprite(PIXI.Texture.fromImage('images/up_arrow.jpg'));
@@ -186,18 +186,23 @@ function addChecker(){
   checker.position.y = ranPos[1]+46;
   checker.interactive = true;
   checker.buttonMode = true;
-  checker.on('pointerdown', start);
+  checker.on('pointerdown', run);
   stage.addChild(checker);
 }
 
-function start(){
+function run(){
   startStop = true;
   stage.removeChild(basicText);
   startMoving();
 }
 
-function endGame(){
+function pause(){
   startStop = false;
+}
+
+function removeRange(s,e){
+  // clear the sprites so we can start over;
+  stage.removeChildren(s,e);
 }
 
 function fiveBy(){
@@ -207,25 +212,17 @@ function fiveBy(){
   buildBoard();
 }
 
-function removeRange(s,e){
-  stage.removeChildren(s,e);
-}
-
 function sixBy(){
   numberOfSquares = 36;
   RowAmount = Math.sqrt(numberOfSquares);
-  // clear the stage of arrow squares so we can start clean when build board;
-  var stageChildren = stage.children.length-2;
-  for(var r=5;r<stageChildren;r++){
-      stage.removeChildAt(6);
-  }
+  removeRange(5,numberOfSquares+6);
   buildBoard();
 }
 
 function setRandomStartPoint(){
-  // return an array with the x and y location of the random start point;
+  // returns an array with the x and y location of the random start point;
   var xyArray = [];
-  var min = 0;
+  var min = 5;
   var max = numberOfSquares;
   var rand = Math.random() * (max - min + 1) + min;
   var ab = Math.floor(rand);
@@ -243,7 +240,7 @@ function setRandomStartPoint(){
 
 function moveChecker(_pos,_checkerStartPos){
   var nPos = xyArray;
-  //move checker to a position based on the index number 0=up 1 = down 2=left 3=right;
+  // move checker to a new position based on the index number 0=up 1 = down 2=left 3=right;
     if(_pos[_checkerStartPos] == 0){
       checker.position.y = checker.position.y-block_size;
     }else if(_pos[_checkerStartPos] == 1){
@@ -274,7 +271,7 @@ function moveChecker(_pos,_checkerStartPos){
 
     for(var i=0;i<xyArray.length;i++){
       var posXY = xyArray[i];
-      //determine the pos index number based on the new position of the checker;
+      //determine the arrow block index number based on the new x y position of the checker;
       if((posXY[0] <=checker.position.x && checker.position.x <= posXY[0] + block_size) && (posXY[1] <=checker.position.y && checker.position.y <= posXY[1] + block_size)){
         //set the new index position value;
         checkerStartPos = i;

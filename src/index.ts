@@ -140,6 +140,7 @@ function buildBoard(){
   var blocks = new PIXI.Sprite(PIXI.Texture.fromImage('images/up_arrow.jpg'));
   // remove all sprites after the UI buttons;
   removeRange(5,numberOfSquares+6);
+  xyArray = [];
   // Create a grid of squares;
   for (var i = 0; i < numberOfSquares; i++) {
       //replace the arrow image based on the random selecton 0-3;
@@ -162,17 +163,17 @@ function loadRandomArrow(blockNum){
   // pick the arrow based on the random number;
   var min = 0;
   var max = 3;
-  var ab = Math.floor(Math.random() * (max - min + 1) + min);
-  if(ab==0){
+  var aNum = Math.floor(Math.random() * (max - min + 1) + min);
+  if(aNum==0){
     masterArray[blockNum] = 0;
     return new PIXI.Sprite(PIXI.Texture.fromImage('images/up_arrow.jpg'));
-  }else if(ab==1){
+  }else if(aNum==1){
     masterArray[blockNum] = 1;
     return new PIXI.Sprite(PIXI.Texture.fromImage('images/dn_arrow.jpg'));
-  }else if(ab==2){
+  }else if(aNum==2){
     masterArray[blockNum] = 2;
     return new PIXI.Sprite(PIXI.Texture.fromImage('images/left_arrow.jpg'));
-  }else if(ab==3){
+  }else if(aNum==3){
     masterArray[blockNum] = 3;
     return new PIXI.Sprite(PIXI.Texture.fromImage('images/right_arrow.jpg'));
   }
@@ -208,7 +209,8 @@ function removeRange(s,e){
 function fiveBy(){
   numberOfSquares = 25;
   RowAmount = Math.sqrt(numberOfSquares);
-  removeRange(5,numberOfSquares+6)
+  removeRange(5,numberOfSquares+6);
+  xyArray = [];
   buildBoard();
 }
 
@@ -216,19 +218,19 @@ function sixBy(){
   numberOfSquares = 36;
   RowAmount = Math.sqrt(numberOfSquares);
   removeRange(5,numberOfSquares+6);
+  xyArray = [];
   buildBoard();
 }
 
 function setRandomStartPoint(){
   // returns an array with the x and y location of the random start point;
   var xyArray = [];
-  var min = 5;
-  var max = numberOfSquares;
-  var rand = Math.random() * (max - min + 1) + min;
-  var ab = Math.floor(rand);
+  var min = 0;
+  var max = numberOfSquares-1;
+  var rNum = Math.floor(Math.random() * (max - min + 1) + min);
 
   for (var i = 0; i < numberOfSquares; i++) {
-      if(i == ab){
+      if(i == rNum){
         xyArray[0] = ((i % RowAmount) * block_size)+26;
         xyArray[1] = (Math.floor(i / RowAmount) * block_size)+26;
         checkerStartPos = i;

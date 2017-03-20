@@ -1,7 +1,7 @@
 /// <reference path="../typings/index.d.ts" />
 
 import PIXI = require('pixi.js');
-const renderer:PIXI.WebGLRenderer = new PIXI.WebGLRenderer(1280, 720);
+const renderer:PIXI.WebGLRenderer = new PIXI.WebGLRenderer(1280, 780);
 document.body.appendChild(renderer.view);
 
 /*
@@ -13,6 +13,7 @@ const stage:PIXI.Container = new PIXI.Container();
 
 var masterArray = [];
 var xyArray = [];
+var hopHistory = [];
 var checkerStartPos = 0;
 var max_x = 0;
 var max_y = 0;
@@ -23,6 +24,13 @@ var startStop = true;
 
 //checker image;
 var checker = new PIXI.Sprite(PIXI.Texture.fromImage('images/checker.png'));
+
+var blocks = new PIXI.Sprite(PIXI.Texture.fromImage('images/up_arrow.jpg'));
+
+var _run = PIXI.Texture.fromImage('images/run.jpg');
+var _pause = PIXI.Texture.fromImage('images/pause.jpg');
+var pauseBtn = new PIXI.Sprite(_pause);
+
 //some audio;
 var bloop = new Audio('audio/FX_Bloop.mp3');
 var blip = new Audio('audio/FX_Blip.mp3');
@@ -48,7 +56,6 @@ basicText.x = 100;
 basicText.y = 120;
 
 //load UI images;
-addStartUI();
 addStopUI();
 addshuffleUI();
 add5x5UI();
@@ -80,26 +87,13 @@ function addTextUI(){
   stage.addChild(basicText);
 }
 
-function addStartUI(){
-  var _start = PIXI.Texture.fromImage('images/run.jpg');
-  var btn = new PIXI.Sprite(_start);
-  btn.position.x = 50;
-  btn.position.y = 10;
-  btn.interactive = true;
-  btn.buttonMode = true;
-  btn.on('pointerdown', run);
-  stage.addChild(btn);
-}
-
 function addStopUI(){
-  var _stop = PIXI.Texture.fromImage('images/pause.jpg');
-  var btn = new PIXI.Sprite(_stop);
-  btn.position.x = 120;
-  btn.position.y = 10;
-  btn.interactive = true;
-  btn.buttonMode = true;
-  btn.on('pointerdown', pause);
-  stage.addChild(btn);
+  pauseBtn.position.x = 120;
+  pauseBtn.position.y = 10;
+  pauseBtn.interactive = true;
+  pauseBtn.buttonMode = true;
+  pauseBtn.on('pointerdown', pause);
+  stage.addChild(pauseBtn);
 }
 
 function addshuffleUI(){
@@ -137,9 +131,8 @@ function add6x6UI(){
 
 function buildBoard(){
 
-  var blocks = new PIXI.Sprite(PIXI.Texture.fromImage('images/up_arrow.jpg'));
   // remove all sprites after the UI buttons;
-  removeRange(5,numberOfSquares+6);
+  removeRange(4,numberOfSquares+6);
   xyArray = [];
   // Create a grid of squares;
   for (var i = 0; i < numberOfSquares; i++) {
@@ -187,18 +180,60 @@ function addChecker(){
   checker.position.y = ranPos[1]+46;
   checker.interactive = true;
   checker.buttonMode = true;
-  checker.on('pointerdown', run);
+  checker.on('pointerdown', startG);
   stage.addChild(checker);
 }
 
-function run(){
-  startStop = true;
+function startG(){
   stage.removeChild(basicText);
   startMoving();
 }
 
 function pause(){
+  if(startStop){
+      startStop = false;
+      this.texture = _run;
+  }else{
+    startStop = true;
+    this.texture = _pause;
+    if(basicText.text == "Lose"){
+      basicText.text = "";
+      buildBoard();
+    }else if(basicText.text == "Win!"){
+      basicText.text = "";
+      buildBoard();
+    }
+    startMoving();
+  }
+  stage.removeChild(basicText);
+}
+
+function checkCycling(pos1,pos2){
+  var l = 0;
+  for (var j=0; j<hopHistory.length; j++) {
+      if (hopHistory[j] == pos1) l++;
+  }
+  if(l > 2){
+      hopHistory = [];
+      startStop = false;
+      pauseBtn.texture = _run;
+      basicText.text = "Lose";
+      basicText.x = 10;
+      basicText.y = 2;
+      stage.addChild(basicText);
+  }
+}
+
+function offTheEdge(){
+
+  blip.play();
+  hopHistory = [];
   startStop = false;
+  pauseBtn.texture = _run;
+  basicText.text = "Win!";
+  basicText.x = 10;
+  basicText.y = 2;
+  stage.addChild(basicText);
 }
 
 function removeRange(s,e){
@@ -209,7 +244,7 @@ function removeRange(s,e){
 function fiveBy(){
   numberOfSquares = 25;
   RowAmount = Math.sqrt(numberOfSquares);
-  removeRange(5,numberOfSquares+6);
+  removeRange(4,numberOfSquares+6);
   xyArray = [];
   buildBoard();
 }
@@ -217,7 +252,7 @@ function fiveBy(){
 function sixBy(){
   numberOfSquares = 36;
   RowAmount = Math.sqrt(numberOfSquares);
-  removeRange(5,numberOfSquares+6);
+  removeRange(4,numberOfSquares+6);
   xyArray = [];
   buildBoard();
 }
@@ -254,20 +289,16 @@ function moveChecker(_pos,_checkerStartPos){
     }
     //check limits. If it goes off the board add a new checker in a random positon;
     if(checker.position.x > max_x+block_size){
-      blip.play();
-      addChecker();
+      offTheEdge();
       return;
     }else if(checker.position.y > max_y+block_size){
-      blip.play();
-      addChecker();
+      offTheEdge();
       return;
     }else if(checker.position.x < 0){
-      blip.play();
-      addChecker();
+      offTheEdge();
       return;
     }else if(checker.position.y < 0){
-      blip.play();
-      addChecker();
+      offTheEdge();
       return;
     }
 
@@ -277,9 +308,12 @@ function moveChecker(_pos,_checkerStartPos){
       if((posXY[0] <=checker.position.x && checker.position.x <= posXY[0] + block_size) && (posXY[1] <=checker.position.y && checker.position.y <= posXY[1] + block_size)){
         //set the new index position value;
         checkerStartPos = i;
+        hopHistory.push(i);
         bloop.play();
         break;
       }
     }
+
+  var count = checkCycling(_checkerStartPos,i);
 
 }
